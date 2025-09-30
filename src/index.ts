@@ -155,9 +155,16 @@ io.on('connection', (socket) => {
     io.to(code).emit('chat', { name, text, ts: Date.now() });
   });
 
-  // START GAME
-  socket.on('startGame', ({ code }: {code:string}) => {
-    const room = getRoom(code); if (!room) return;
+  // START GAME — owner only (עודכן)
+  socket.on('startGame', ({ code }: {code:string}, cb?: (res: any) => void) => {
+    const room = getRoom(code); 
+    if (!room) { cb?.({ error: 'Room not found' }); return; }
+
+    // רק בעל החדר רשאי להתחיל משחק
+    if (!room.engine.isOwner(socket.id)) {
+      cb?.({ error: 'רק בעל החדר יכול להתחיל משחק' });
+      return;
+    }
 
     const { smallBlind, bigBlind } = room.settings;
     (room.engine as any).setBlinds?.(smallBlind, bigBlind);
@@ -167,6 +174,8 @@ io.on('connection', (socket) => {
     room.engine.startHand();
     const broadcastView = withSettings(room.engine.getBroadcastView(), room.settings);
     io.to(code).emit('state', broadcastView);
+
+    cb?.({ ok: true });
   });
 
   // KICK
