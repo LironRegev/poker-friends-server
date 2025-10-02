@@ -77,6 +77,7 @@ export class PokerEngine {
       actionLog: [],
       pots: []
     };
+      console.log('[PokerEngine] MIN_ALWAYS_BB active, BB =', this.state.bigBlind);
   }
 
   // ===== עזר ליומן =====
@@ -267,7 +268,7 @@ export class PokerEngine {
     const dealer = this.state.players[this.state.dealerSeat]?.name ?? 'Dealer';
     const sb = this.state.players[sbSeat]?.name ?? 'SB';
     const bb = this.state.players[bbSeat]?.name ?? 'BB';
-    this.log(`New hand — Dealer: ${dealer}, SB: ${sb} (${this.state.smallBlind}), BB: ${bb} (${this.state.bigBlind})`);
+    this.log(`New hand — Dealer: ${dealer}, SB: ${sb} (${this.state.smallBlind}), BB: ${this.state.bigBlind})`);
   }
 
   private postBlind(seat: number, amount: number) {
@@ -485,7 +486,9 @@ export class PokerEngine {
     const seat = actor.seat;
     const contributed = this.streetBets[seat] || 0;
     const toCall = Math.max(0, this.state.currentBet - contributed);
-    const minRaise = Math.max(this.state.minRaise, this.state.bigBlind);
+
+    // === כאן השינוי: המינימום תמיד BB ===
+    const minRaise = this.state.bigBlind;
 
     if (kind === 'fold') {
       actor.inHand = false;
@@ -533,15 +536,18 @@ export class PokerEngine {
 
       const prev = this.state.currentBet;
       this.state.currentBet = Math.max(prev, this.streetBets[seat]);
-      this.state.minRaise = this.state.currentBet;
-      this.state.lastAggressorSeat = actor.seat;
 
+      // === כאן השינוי: לקבע את המינימום ל-BB
+      this.state.minRaise = this.state.bigBlind;
+
+      this.state.lastAggressorSeat = actor.seat;
       this.state.players.forEach(p=>{ if (p.seat !== actor.seat && p.inHand && !p.isAllIn) p.hasActedThisRound = false; });
       actor.hasActedThisRound = true;
       this.log(`${actor.name}: Bet ${this.state.currentBet}`);
     }
 
     else if (kind === 'raise') {
+      // יעד סופי חייב להיות לפחות currentBet + BB
       const raiseTo = Math.max(this.state.currentBet + minRaise, Math.floor(amount ?? 0));
       if (raiseTo <= this.state.currentBet) return false;
 
@@ -552,7 +558,10 @@ export class PokerEngine {
       const prev = this.state.currentBet;
       if (this.streetBets[seat] > prev) {
         this.state.currentBet = this.streetBets[seat];
-        this.state.minRaise = Math.max(this.state.minRaise, this.state.currentBet - prev);
+
+        // === כאן השינוי: לא לגדול לפי ההפרש, תמיד BB
+        this.state.minRaise = this.state.bigBlind;
+
         this.state.lastAggressorSeat = actor.seat;
         this.state.players.forEach(p=>{ if (p.seat !== actor.seat && p.inHand && !p.isAllIn) p.hasActedThisRound = false; });
       }

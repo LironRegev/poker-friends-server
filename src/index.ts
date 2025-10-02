@@ -190,6 +190,10 @@ io.on('connection', (socket) => {
   // ACTIONS
   socket.on('action', ({ code, kind, amount }: {code:string; kind:'fold'|'check'|'call'|'bet'|'raise'; amount?:number}) => {
     const room = getRoom(code); if (!room) return;
+
+     // לוג זמני:
+  console.log('[SERVER action]', { kind, amount, currentBet: room.engine.state.currentBet, bb: room.settings.bigBlind });
+  
     const changed = room.engine.playerAction(socket.id, kind, amount);
     if (changed) {
       const broadcastView = withSettings(room.engine.getBroadcastView(), room.settings);

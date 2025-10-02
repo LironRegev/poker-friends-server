@@ -9,3 +9,7 @@ dist/
 .env
 npm-debug.log*
 .DS_Store
+
+dist
+src/**/*.js
+src/**/*.js.map
