@@ -205,7 +205,9 @@ export class PokerEngine {
         inHand: p.inHand, hasActedThisRound: p.hasActedThisRound,
         isAllIn: p.isAllIn, isOwner: p.isOwner,
         holeCount: p.hole ? p.hole.length : 0,
-        publicHole: this.publicReveals[p.seat]
+        publicHole: this.publicReveals[p.seat],
+        // ⬅️ חדש: כמה השחקן תרם בסטריט הנוכחי (בשביל חישוב toCall בצד לקוח)
+        contributedThisStreet: this.streetBets[p.seat] || 0
       })),
       revealSeats: Array.from(this.revealSeats),
       lastWinners: this.state.lastWinners ?? [],
